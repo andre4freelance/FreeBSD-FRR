@@ -79,5 +79,122 @@ net.inet6.ip6.forwarding=1
 
 ## Reboot
 
+## Enable FRR from boot
+/etc/rc.conf
+
+frr_enable="YES"
+
+## Create Runtime & DB Directory
+
+mkdir -p /var/run/frr
+mkdir -p /var/lib/frr
+chown -R frr:frr /var/lib/frr
+chown -R frr:frr /var/run/frr
+
+## Create rc.d FRR
+
+### 1.
+/usr/local/etc/rc.d/frr
+
+#!/bin/sh
+#
+# PROVIDE: frr
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="frr"
+rcvar="frr_enable"
+
+# Path FRR binaries
+frr_sbindir="/usr/local/sbin"
+frr_etcdir="/usr/local/etc/frr"
+frr_rundir="/var/run/frr"
+frr_libdir="/var/lib/frr"
+frr_daemons_file="${frr_etcdir}/daemons"
+
+start_cmd="frr_start"
+stop_cmd="frr_stop"
+status_cmd="frr_status"
+
+frr_start()
+{
+    echo "Starting FRR daemons..."
+    mkdir -p ${frr_rundir} ${frr_libdir}
+    chown frr:frr ${frr_rundir} ${frr_libdir}
+    chmod 750 ${frr_rundir} ${frr_libdir}
+
+    if [ ! -f "${frr_daemons_file}" ]; then
+        echo "No daemons file found at ${frr_daemons_file}"
+        return 1
+    fi
+
+    . ${frr_daemons_file}
+
+    for daemon in zebra bgpd ospfd ospf6d ripd ripngd isisd pimd ldpd nhrpd babeld eigrpd bfdd staticd pbrd pathd; do
+        eval enabled=\$${daemon}
+        if [ "$enabled" = "yes" ]; then
+            echo "  -> Starting $daemon"
+            ${frr_sbindir}/${daemon} -d -f ${frr_etcdir}/${daemon}.conf -A 127.0.0.1
+        fi
+    done
+}
+
+frr_stop()
+{
+    echo "Stopping FRR daemons..."
+    killall zebra bgpd ospfd ospf6d ripd ripngd isisd pimd ldpd nhrpd babeld eigrpd bfdd staticd pbrd pathd 2>/dev/null
+}
+
+frr_status()
+{
+    echo "Checking FRR daemons..."
+    for daemon in zebra bgpd ospfd ospf6d ripd ripngd isisd pimd ldpd nhrpd babeld eigrpd bfdd staticd pbrd pathd; do
+        pgrep -x $daemon >/dev/null && echo "  $daemon is running" || echo "  $daemon is stopped"
+    done
+}
+
+load_rc_config $name
+run_rc_command "$1"
+
+### 2.
+
+/usr/local/etc/frr/daemons
+
+# Daemons configuration for FRR
+zebra=yes
+bgpd=yes
+ospfd=yes
+bfdd=yes
+ospf6d=no
+ripd=no
+ripngd=no
+isisd=no
+ldpd=no
+pimd=no
+nhrpd=no
+eigrpd=no
+babeld=no
+pbrd=no
+pathd=no
+snmpd=no
+
+### 3. chmod +x /usr/local/etc/rc.d/frr
+
+## Reboot again
+
+## Start FRR
+
+service frr start
+vtysh
+
+
+
+
+
+
+
+
 
 
