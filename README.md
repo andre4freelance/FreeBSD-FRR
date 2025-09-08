@@ -1,29 +1,54 @@
 # FreeBSD-FRR
-FreeBSD 14.3
 
-## Install required packages
+This guide provides step-by-step instructions to build and install FRR (Free Range Routing) on FreeBSD 14.3. It covers package installation, user and group setup, building from source, configuration, and service management.
 
+---
+
+## Prerequisites
+
+In this case we using **FreeBSD 14.3**.
+
+## 1. Install Required Packages
+
+Install all necessary dependencies using `pkg`:
+
+```sh
 pkg install autoconf automake bison c-ares git gmake json-c libtool \
     libunwind libyang2 pkgconf protobuf-c texinfo py311-pytest py311-sphinx
+```
 
-## Add frr group and user
+## 2. Create FRR User and Groups
 
+Create the required groups and user for FRR:
+
+```sh
 pw groupadd frr -g 101
 pw groupadd frrvty -g 102
 pw adduser frr -g 101 -u 101 -G 102 -c "FRR suite" \
    -d /usr/local/etc/frr -s /usr/sbin/nologin
+```
 
-## Build
+## 3. Build FRR from Source
 
-### Git Clone
+### a. Clone the FRR Repository
+
+```sh
 git clone https://github.com/frrouting/frr.git frr
+```
 
-### Pre Build
+### b. Prepare the Build Environment
+
+```sh
 cd frr
 ./bootstrap.sh
 export MAKE=gmake LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
+```
 
-### Build
+### c. Configure the Build
+
+Customize the build for general use with the following parameters:
+
+```sh
 ./configure \
     --sysconfdir=/usr/local/etc \
     --localstatedir=/var \
@@ -41,15 +66,24 @@ export MAKE=gmake LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
     --enable-snmp \
     --enable-fpm \
     --enable-config-rollbacks
+```
 
-### Build and Install
+### d. Build and Install
+
+```sh
 gmake
 gmake check
 gmake install
+```
 
-## Create empty FRR configuration files
+## 4. Configure FRR
 
-mkdir /usr/local/etc/frr
+### a. Create Configuration Directory and Files
+
+Create the configuration directory and empty config files for each FRR daemons:
+
+```sh
+mkdir -p /usr/local/etc/frr
 touch /usr/local/etc/frr/babeld.conf
 touch /usr/local/etc/frr/bfdd.conf
 touch /usr/local/etc/frr/bgpd.conf
@@ -65,37 +99,50 @@ touch /usr/local/etc/frr/ripd.conf
 touch /usr/local/etc/frr/ripngd.conf
 touch /usr/local/etc/frr/staticd.conf
 touch /usr/local/etc/frr/zebra.conf
-chown -R frr:frr /usr/local/etc/frr/
 touch /usr/local/etc/frr/vtysh.conf
+chown -R frr:frr /usr/local/etc/frr/
 chown frr:frrvty /usr/local/etc/frr/vtysh.conf
 chmod 640 /usr/local/etc/frr/*.conf
+```
 
-## Enable IP & IPv6 forwarding
-Add the following lines to the end of /etc/sysctl.conf:
+### b. Enable IP and IPv6 Forwarding
 
-#Routing: We need to forward packets
+Edit `/etc/sysctl.conf` and add the following lines to enable packet forwarding:
+
+```
+# Routing: Enable IPv4 and IPv6 forwarding
 net.inet.ip.forwarding=1
 net.inet6.ip6.forwarding=1
+```
 
-## Reboot
+Reboot the system or apply.
 
-## Enable FRR from boot
-/etc/rc.conf
+## 5. Enable FRR at Boot
 
+Add the following line to `/etc/rc.conf` to start FRR automatically at boot:
+
+```
 frr_enable="YES"
+```
 
-## Create Runtime & DB Directory
+## 6. Create Runtime and Database Directories
 
+Create the necessary runtime and database directories for FRR:
+
+```sh
 mkdir -p /var/run/frr
 mkdir -p /var/lib/frr
 chown -R frr:frr /var/lib/frr
 chown -R frr:frr /var/run/frr
+```
 
-## Create rc.d FRR
+## 7. Set Up FRR Service Scripts
 
-### 1.
-/usr/local/etc/rc.d/frr
+### a. Create the rc.d Script
 
+Create `/usr/local/etc/rc.d/frr` with the following content to manage FRR as a service:
+
+```sh
 #!/bin/sh
 #
 # PROVIDE: frr
@@ -107,7 +154,7 @@ chown -R frr:frr /var/run/frr
 name="frr"
 rcvar="frr_enable"
 
-# Path FRR binaries
+# Path to FRR binaries and configuration
 frr_sbindir="/usr/local/sbin"
 frr_etcdir="/usr/local/etc/frr"
 frr_rundir="/var/run/frr"
@@ -157,11 +204,20 @@ frr_status()
 
 load_rc_config $name
 run_rc_command "$1"
+```
 
-### 2.
+Make the script executable:
 
-/usr/local/etc/frr/daemons
+```sh
+chmod +x /usr/local/etc/rc.d/frr
+```
 
+### b. Create the Daemons Configuration File
+
+Create `/usr/local/etc/frr/daemons` to specify which FRR daemons to start
+For example, we enable zebra as the main daemon, along with BGP, OSPF, and BFD.
+
+```
 # Daemons configuration for FRR
 zebra=yes
 bgpd=yes
@@ -179,22 +235,25 @@ babeld=no
 pbrd=no
 pathd=no
 snmpd=no
+```
 
-### 3. chmod +x /usr/local/etc/rc.d/frr
+## 8. Start FRR
 
-## Reboot again
+After rebooting, start the FRR service:
 
-## Start FRR
-
+```sh
 service frr start
+```
+
+To access the FRR integrated shell, use:
+
+```sh
 vtysh
+```
 
+---
 
-
-
-
-
-
-
-
+**Note:**  
+- Adjust the list of enabled daemons in `/usr/local/etc/frr/daemons` according to your routing requirements.
+- Ensure all configuration files have the correct permissions and ownership for security.
 
