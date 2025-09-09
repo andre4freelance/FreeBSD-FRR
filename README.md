@@ -76,6 +76,9 @@ gmake check
 gmake install
 ```
 
+![Complie Result](images/compile-result.png)
+
+
 ## 4. Configure FRR
 
 ### a. Create Configuration Directory and Files
@@ -251,9 +254,22 @@ To access the FRR integrated shell, use:
 vtysh
 ```
 
+![Start FRR](images/frr-start-vtysh.png)
+
 ---
 
 **Note:**  
 - Adjust the list of enabled daemons in `/usr/local/etc/frr/daemons` according to your routing requirements.
 - Ensure all configuration files have the correct permissions and ownership for security.
+---
 
+## 9. Testing
+For testing, we established a BGP session between FRR and MikroTik. The BGP session was successfully established, and FRR received several prefix from MikroTik.
+
+### FRR
+
+![FRR BGP](images/FreeBSD-FRR-BGP-status.png)
+
+### MikroTik
+
+![MikroTik BGP](images/MikroTik-BGP-status.png)
