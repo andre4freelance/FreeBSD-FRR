@@ -124,7 +124,26 @@ Reboot the system or apply.
 
 Add the following line to `/etc/rc.conf` to start FRR automatically at boot:
 
+```sh
+frr_enable="YES"
 ```
+
+This is the final `/etc/rc.conf` example to enable FRR and configure IP addresses at boot.
+
+```sh
+hostname="FreeBSD-FRR"
+sshd_enable="YES"
+moused_nondefault_enable="NO"
+# Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable
+dumpdev="AUTO"
+zfs_enable="YES"
+
+# INTERFACE
+ifconfig_vtnet0="DHCP descr 'MGMT'"
+ifconfig_vtnet1="inet 10.10.100.1 netmask 255.255.255.252 descr 'MikroTik'"
+
+
+# ENABLE FRR
 frr_enable="YES"
 ```
 
@@ -273,3 +292,13 @@ For testing, we established a BGP session between FRR and MikroTik. The BGP sess
 ### MikroTik
 
 ![MikroTik BGP](images/MikroTik-BGP-status.png)
+
+---
+
+## Links
+
+Origin : 
+[\[https://github.com/andre4freelance/FreeBSD-FRR](https://github.com/andre4freelance/FreeBSD-FRR)
+
+Linkedin post : 
+[\[https://www.linkedin.com/posts/link-andre-bastian_infra-cloud-virtualmachine-activity-7366455292886196224-m2Qy?utm_source=share&utm_medium=member_desktop&rcm=ACoAAD73JlUBty-p-mBfMEW0-O4j0sv-e_PRQvc](https://www.linkedin.com/posts/link-andre-bastian_networking-freebsd-opensource-activity-7369773828685627394-M3N1?utm_source=share&utm_medium=member_desktop&rcm=ACoAAD73JlUBty-p-mBfMEW0-O4j0sv-e_PRQvc)
